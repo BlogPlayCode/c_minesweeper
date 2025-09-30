@@ -7,8 +7,7 @@
 #include <string.h>
 
 #define MINE -1
-#define BUTTON_WIDTH 32
-#define BUTTON_HEIGHT 32
+#define BUTTON_SIZE 32
 #define CONTROL_PANEL_HEIGHT 40
 
 int COLS = 15, ROWS = 8, MINES_COUNT;
@@ -199,7 +198,7 @@ void openCell(int row, int col) {
     if (isClicked[id] || user_field[id] == 'F') return;
 
     isClicked[id] = true;
-    user_field[id] = field[id];  // Note: int to char, as in original
+    user_field[id] = field[id];
 
     update_button(id);
 
@@ -247,6 +246,8 @@ void create_grid() {
     grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 0);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 0);
+    gtk_widget_set_hexpand(grid, FALSE);
+    gtk_widget_set_vexpand(grid, FALSE);
 
     cell_buttons = malloc(ROWS * COLS * sizeof(GtkWidget *));
 
@@ -254,7 +255,9 @@ void create_grid() {
         for (int j = 0; j < COLS; j++) {
             int id = i * COLS + j;
             GtkWidget *button = gtk_button_new_with_label(" ? ");
-            gtk_widget_set_size_request(button, BUTTON_WIDTH, BUTTON_HEIGHT);
+            gtk_widget_set_size_request(button, BUTTON_SIZE, BUTTON_SIZE);
+            gtk_widget_set_hexpand(button, FALSE);
+            gtk_widget_set_vexpand(button, FALSE);
             g_signal_connect(button, "clicked", G_CALLBACK(on_cell_clicked), GINT_TO_POINTER(id));
             g_signal_connect(button, "button-press-event", G_CALLBACK(on_cell_right_click), GINT_TO_POINTER(id));
             gtk_grid_attach(GTK_GRID(grid), button, j, i, 1, 1);
@@ -303,10 +306,11 @@ void on_restart(GtkWidget *widget, gpointer data) {
     gtk_container_remove(GTK_CONTAINER(main_box), grid);
 
     create_grid();
-    gtk_box_pack_start(GTK_BOX(main_box), grid, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), grid, FALSE, FALSE, 0);
     gtk_widget_show_all(grid);
 
-    gtk_window_set_default_size(GTK_WINDOW(window), COLS * BUTTON_WIDTH + 20, ROWS * BUTTON_HEIGHT + CONTROL_PANEL_HEIGHT + 40);
+    // Force window to resize to exact dimensions
+    gtk_window_resize(GTK_WINDOW(window), COLS * BUTTON_SIZE + 20, ROWS * BUTTON_SIZE + CONTROL_PANEL_HEIGHT + 40);
 }
 
 int main(int argc, char **argv) {
@@ -314,7 +318,7 @@ int main(int argc, char **argv) {
     MINES_COUNT = (int)(ROWS * COLS / 6);
     user_mines = MINES_COUNT;
 
-    colors[1] = RGB(32, 32, 32);  // Default, no GetSysColor
+    colors[1] = RGB(32, 32, 32);
 
     isClicked = calloc(ROWS * COLS, sizeof(bool));
     field = calloc(ROWS * COLS, sizeof(int));
@@ -327,10 +331,10 @@ int main(int argc, char **argv) {
 
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider,
-        ".button-closed { background: #373737; border: 1px solid #4D4D4D; }"
-        ".button-opened { background: #202020; border: 1px solid #4D4D4D; }"
-        ".button-mine { background: #FF0000; border: 1px solid #4D4D4D; }"
-        ".button-win { background: #58C858; border: 1px solid #4D4D4D; }",
+        ".button-closed { background: #373737; border: 1px solid #4D4D4D; padding: 0px; }"
+        ".button-opened { background: #202020; border: 1px solid #4D4D4D; padding: 0px; }"
+        ".button-mine { background: #FF0000; border: 1px solid #4D4D4D; padding: 0px; }"
+        ".button-win { background: #58C858; border: 1px solid #4D4D4D; padding: 0px; }",
         -1, NULL);
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(provider);
@@ -338,10 +342,12 @@ int main(int argc, char **argv) {
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), WINDOW_TITLE);
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-    gtk_window_set_default_size(GTK_WINDOW(window), COLS * BUTTON_WIDTH + 20, ROWS * BUTTON_HEIGHT + CONTROL_PANEL_HEIGHT + 40);
+    gtk_window_resize(GTK_WINDOW(window), COLS * BUTTON_SIZE + 20, ROWS * BUTTON_SIZE + CONTROL_PANEL_HEIGHT + 40);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_hexpand(main_box, FALSE);
+    gtk_widget_set_vexpand(main_box, FALSE);
     gtk_container_add(GTK_CONTAINER(window), main_box);
 
     top_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
@@ -373,7 +379,7 @@ int main(int argc, char **argv) {
     gtk_box_pack_start(GTK_BOX(top_box), mines_edit, FALSE, FALSE, 0);
 
     create_grid();
-    gtk_box_pack_start(GTK_BOX(main_box), grid, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), grid, FALSE, FALSE, 0);
 
     gtk_widget_show_all(window);
     gtk_main();
@@ -385,3 +391,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
